@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>전생했더니 웹툰 주인공?!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070b16;
+    --panel: rgba(12, 22, 44, .92);
+    --glow: #4fd1ff;
+    --glow-soft: rgba(79, 209, 255, .25);
+    --text: #e6f4ff;
+    --muted: #8aa4c2;
+    --gold: #ffd166;
+    --danger: #ff6b81;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background:
+      radial-gradient(ellipse at 20% 0%, #10224a 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 100%, #0b1d3a 0%, transparent 50%),
+      var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 18px 56px; }
+  h1 {
+    font-family: "Black Han Sans", "Noto Sans KR", sans-serif;
+    font-weight: 400; letter-spacing: .01em;
+    font-size: clamp(2rem, 6.5vw, 3.4rem); line-height: 1.15; margin: 0 0 10px;
+  }
+  .lead { color: var(--muted); margin: 0 0 26px; max-width: 48ch; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tab {
+    font: inherit; font-weight: 700; cursor: pointer;
+    background: transparent; color: var(--text);
+    border: 1px solid var(--glow-soft); padding: 9px 18px; border-radius: 8px;
+  }
+  .tab[aria-selected="true"] { background: var(--glow); color: #04101e; border-color: var(--glow); }
+
+  .stage { display: grid; grid-template-columns: 5fr 6fr; gap: 20px; align-items: start; }
+  @media (max-width: 760px) { .stage { grid-template-columns: 1fr; } }
+
+  .viewer {
+    background: var(--panel); border: 1px solid var(--glow-soft);
+    border-radius: 12px; padding: 14px;
+  }
+  .frame {
+    aspect-ratio: 1 / 1; width: 100%; border-radius: 8px; overflow: hidden;
+    background: #0a1428; display: grid; place-items: center; text-align: center; color: var(--muted);
+  }
+  .frame canvas, .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .frame p { margin: 0; padding: 20px; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .btn {
+    font: inherit; font-weight: 700; cursor: pointer;
+    background: var(--glow); color: #04101e; border: 0;
+    padding: 10px 18px; border-radius: 8px;
+  }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--glow-soft); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:focus-visible, .tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  input[type="file"] { display: none; }
+  .status { margin: 12px 0 0; font-size: .88rem; color: var(--muted); }
+  .status.error { color: var(--danger); }
+
+  /* ---- 상태창 ---- */
+  .sysbox {
+    background: var(--panel);
+    border: 1px solid var(--glow);
+    border-radius: 6px; padding: 20px 22px 22px;
+    box-shadow: 0 0 0 3px rgba(79,209,255,.08), 0 0 28px var(--glow-soft), inset 0 0 24px rgba(79,209,255,.06);
+    min-height: 260px;
+  }
+  .sys-tag { font-size: .8rem; color: var(--glow); margin: 0 0 12px; }
+  .empty { color: var(--muted); margin: 0; }
+  .title-line { color: var(--gold); font-weight: 700; margin: 0 0 2px; font-size: .95rem; }
+  .type-name { font-family: "Black Han Sans", sans-serif; font-size: 2rem; line-height: 1.2; margin: 0 0 4px; }
+  .quote { color: var(--muted); margin: 0 0 16px; font-size: .95rem; }
+  .rows { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+  .rows li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed rgba(79,209,255,.2); padding-bottom: 6px; }
+  .rows .k { color: var(--muted); flex: none; }
+  .rows .v { text-align: right; font-weight: 700; }
+  .rows .v.hot { color: var(--gold); }
+  .works-h { font-size: .85rem; color: var(--muted); margin: 0 0 6px; }
+  .works { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; padding: 0; list-style: none; }
+  .works li { border: 1px solid var(--glow-soft); border-radius: 6px; padding: 3px 10px; font-size: .88rem; }
+  .result-main { text-align: center; padding: 10px 0 20px; }
+  .sysbox .type-name {
+    font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1.25;
+    text-align: center; margin: 4px 0 14px; word-break: keep-all;
+  }
+  .sysbox .type-desc {
+    font-size: .84rem; line-height: 1.75; color: var(--muted);
+    text-align: left; max-width: 46ch; margin: 0 auto 14px; word-break: keep-all;
+  }
+  .match-line { margin: 0; color: var(--gold); font-weight: 700; font-size: .9rem; }
+  .bars { display: grid; gap: 7px; }
+  .bar-row { word-break: keep-all; display: grid; grid-template-columns: 150px 1fr 40px; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); }
+  .bar-track { height: 8px; background: rgba(79,209,255,.12); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--glow); border-radius: 99px; transition: width .25s ease; }
+  .bar-row:first-child { color: var(--text); }
+  .bar-row:first-child .bar-fill { background: var(--gold); }
+  .pct { text-align: right; font-variant-numeric: tabular-nums; }
+  .copy-row { margin-top: 16px; }
+  .note { margin-top: 26px; font-size: .82rem; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>전생했더니<br>웹툰 주인공?!</h1>
+  <p class="lead">카메라를 켜거나 사진을 올려 당신의 이세계 주인공 유형을 파악해보세요! (장점: 트럭에 뛰어들지 않고도 이세계 웹툰에 빙의해볼 수 있음)</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-cam" aria-selected="true">카메라로 보기</button>
+    <button class="tab" role="tab" id="tab-photo" aria-selected="false">사진 올리기</button>
+  </div>
+
+  <div class="stage">
+    <section class="viewer" aria-label="얼굴 입력">
+      <div class="frame" id="frame"><p>아래 버튼을 눌러 시작하세요.</p></div>
+      <div class="actions" id="actions-cam">
+        <button class="btn" id="btn-start">카메라 켜기</button>
+        <button class="btn ghost" id="btn-stop" disabled>카메라 끄기</button>
+      </div>
+      <div class="actions" id="actions-photo" hidden>
+        <label class="btn" for="file">사진 고르기</label>
+        <input type="file" id="file" accept="image/*">
+      </div>
+      <p class="status" id="status" role="status">모델을 불러오는 중이에요…</p>
+    </section>
+
+    <section class="sysbox" id="result" aria-live="polite">
+      <p class="sys-tag">[시스템]</p>
+      <p class="empty">얼굴이 인식되면 상태창이 열려요.</p>
+    </section>
+  </div>
+
+  <p class="note">사진과 영상은 내 기기 안에서만 분석되고 서버로 전송되지 않아요. 재미로 보는 결과예요.</p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+<script>
+/* ============================================================
+   1) Teachable Machine 모델 주소 (TensorFlow.js 형식으로 Export)
+      - Upload my model 링크:  "https://teachablemachine.withgoogle.com/models/모델ID/"
+      - 직접 다운로드한 경우:   "./model/"   (model.json, metadata.json, weights.bin)
+   ============================================================ */
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/86T59-wN0/";
+
+/* ============================================================
+   2) 유형별 상태창 내용.
+      키 = 결과 화면에 크게 나오는 이름 = Teachable Machine 클래스 이름
+      (이름이 조금 달라도 서로 포함 관계면 자동으로 매칭돼요)
+      desc = 이름 아래에 작게 나오는 설명
+   ============================================================ */
+const TYPE_INFO = {
+  "회귀한 냉혈한 주인공": {
+    desc: "고고하고 냉혈한 주인공, 회귀 전 배신을 당해 복수할 생각으로 가득 찬 당신. 긍정100 조연들이 마음을 치유해주고 츤데레 차카니가 됩니다^^"
+  },
+  "회귀한 sss급 먼치킨 주인공": {
+    desc: "능글맞은 성격, 무리를 이끄는 리더십있는 면모, 당신이 무엇을 할 때마다 주변이 놀랍니다! 악한 조연을 참교육하는 게 취미."
+  },
+  "힘을 숨긴 주인공": {
+    desc: "당신은 과거에 짱센 능력자였습니다! 이후 일반인의 몸으로 빙의/환생하여 평범한 삶을 살아보려 하지만... 닥치는 고난과 역경으로 그 꿈은 날아가 버렸다..... 주변인들은 당신에게 아무 능력도 없는 줄만 알지만, 사실 그간의 내공으로 몰래 큰 일들을 해결하는 당신! 끝에 끝까지 숨기다가 어느샌가 정체를 들키고 다시 능력자로서의 삶을 살아갑니다."
+  },
+  "병약한 주인공": {
+    desc: "당신은 체력이 부족한 대신 뇌에 뉴럴링크를 삽입한 것 마냥 머리 회전이 빠릅니다! 당신을 얕보는 악인들에 맞서 뒷통수를 휘갈기는 데에 뛰어난 재능을 가지고 있는 것이 장점. AI가 없는 시대에 AI에 필적할 지능을 가지고 신약을 개발하기도 합니다."
+  },
+  "로판 주인공": {
+    desc: "당신은 아름다운 외모의 소유자로 황궁 연회에서 모든 이성이 당신을 바라보게 할 수 있는 능력(?)을 가지고 있습니다. 지나친 구애에 머리가 아프긴 하지만, 그것도 당신의 숙명이 아닐까요? 궁극적으로 정략결혼에 맞서 당신의 진짜 사랑을 쟁취하세요!"
+  },
+  "로판에 빙의한 악인": {
+    desc: "당신이 빙의한 몸은 아름다운 외모와 재력을 가진... 악인이었습니다ㅜㅜ 그러나! 빙의한 당신의 목적은 목숨을 연명하고 평범한 삶을 살아가는 것! 괜히 주인공에게 해코지하려다 죽는 엔딩을 맞는 것이 싫은 당신은 얼른 손을 털고 초갑부가 되려고 하는데... 생각지도 못하게 주인공의 남/여자친구가 당신을 흥미로워합니다! 과연 당신은 목표를 이루고 평생 놀고먹는 삶을 살 수 있을까요?"
+  },
+};
+Object.entries(TYPE_INFO).forEach(([k, v]) => { v.name = k; });
+
+const MAX_BARS = 5; // 아래 막대에 보여줄 유형 수
+const MIN_SHOW = 0.01;        // 1% 미만은 막대에서 숨김
+const PREDICT_EVERY_MS = 250; // 카메라 예측 간격(ms)
+
+let model = null, webcam = null, rafId = null, lastRun = 0, lastShareText = "";
+
+const $ = id => document.getElementById(id);
+const frame = $("frame"), statusEl = $("status"), resultEl = $("result");
+
+function setStatus(msg, isError = false) {
+  statusEl.textContent = msg;
+  statusEl.classList.toggle("error", isError);
+}
+
+function findInfo(className) {
+  if (TYPE_INFO[className]) return TYPE_INFO[className];
+  const key = Object.keys(TYPE_INFO).find(k => className.includes(k) || k.includes(className));
+  return key ? TYPE_INFO[key] : null;
+}
+
+async function loadModel() {
+  try {
+    model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+    setStatus("준비 완료! 카메라를 켜거나 사진을 올려보세요.");
+  } catch (e) {
+    console.error(e);
+    setStatus("모델을 불러오지 못했어요. MODEL_URL이 TensorFlow.js 모델 주소인지 확인해 주세요.", true);
+  }
+}
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+function render(predictions) {
+  const sorted = [...predictions].sort((a, b) => b.probability - a.probability);
+  const top = sorted[0];
+  const info = findInfo(top.className);
+  const name = info ? info.name : top.className;
+  const match = (top.probability * 100).toFixed(1) + "%";
+
+  resultEl.replaceChildren();
+  resultEl.appendChild(el("p", "sys-tag", "[시스템] 플레이어의 얼굴을 분석했습니다."));
+
+  const main = el("div", "result-main");
+  main.appendChild(el("h2", "type-name", name));
+  if (info) main.appendChild(el("p", "type-desc", info.desc));
+  main.appendChild(el("p", "match-line", "유형 일치율 " + match));
+  resultEl.appendChild(main);
+
+  lastShareText = `[내 얼굴 먼치킨 유형] ${name} (${match})` + (info ? "\n" + info.desc : "");
+
+  const bars = el("div", "bars");
+  sorted.filter(p => p.probability >= MIN_SHOW).slice(0, MAX_BARS).forEach(p => {
+    const row = el("div", "bar-row");
+    const track = el("div", "bar-track");
+    const fill = el("div", "bar-fill");
+    fill.style.width = (p.probability * 100).toFixed(0) + "%";
+    track.appendChild(fill);
+    row.append(el("span", "", p.className), track, el("span", "pct", (p.probability * 100).toFixed(0) + "%"));
+    bars.appendChild(row);
+  });
+  resultEl.appendChild(bars);
+
+  const copyRow = el("div", "copy-row");
+  const copyBtn = el("button", "btn ghost", "결과 복사하기");
+  copyBtn.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(lastShareText);
+      copyBtn.textContent = "복사했어요!";
+    } catch { copyBtn.textContent = "복사에 실패했어요"; }
+    setTimeout(() => (copyBtn.textContent = "결과 복사하기"), 1500);
+  };
+  copyRow.appendChild(copyBtn);
+  resultEl.appendChild(copyRow);
+}
+
+/* ---------- 카메라 ---------- */
+async function startCamera() {
+  if (!model) { setStatus("모델이 아직 준비되지 않았어요.", true); return; }
+  $("btn-start").disabled = true;
+  setStatus("카메라 권한을 허용해 주세요…");
+  try {
+    webcam = new tmImage.Webcam(400, 400, true);
+    await webcam.setup();
+    await webcam.play();
+    frame.replaceChildren(webcam.canvas);
+    $("btn-stop").disabled = false;
+    setStatus("얼굴을 화면 가운데에 맞춰 주세요.");
+    lastRun = 0;
+    rafId = requestAnimationFrame(loop);
+  } catch (e) {
+    console.error(e);
+    $("btn-start").disabled = false;
+    setStatus("카메라를 켤 수 없어요. 브라우저의 카메라 권한을 확인해 주세요.", true);
+  }
+}
+
+async function loop(ts) {
+  if (!webcam) return;
+  webcam.update();
+  if (ts - lastRun > PREDICT_EVERY_MS) {
+    lastRun = ts;
+    render(await model.predict(webcam.canvas));
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+function stopCamera() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+  if (webcam) { webcam.stop(); webcam = null; }
+  frame.replaceChildren(el("p", "", "카메라가 꺼졌어요."));
+  $("btn-start").disabled = false;
+  $("btn-stop").disabled = true;
+}
+
+/* ---------- 사진 업로드 ---------- */
+$("file").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (!model) { setStatus("모델이 아직 준비되지 않았어요.", true); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = async () => {
+      frame.replaceChildren(img);
+      render(await model.predict(img));
+      setStatus("분석 완료! 다른 사진도 올려보세요.");
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(f);
+  e.target.value = "";
+});
+
+/* ---------- 탭 전환 ---------- */
+function setMode(cam) {
+  $("tab-cam").setAttribute("aria-selected", cam);
+  $("tab-photo").setAttribute("aria-selected", !cam);
+  $("actions-cam").hidden = !cam;
+  $("actions-photo").hidden = cam;
+  if (!cam && webcam) stopCamera();
+  frame.replaceChildren(el("p", "", cam ? "아래 버튼을 눌러 시작하세요." : "얼굴이 잘 보이는 정면 사진을 골라주세요."));
+}
+$("tab-cam").onclick = () => setMode(true);
+$("tab-photo").onclick = () => setMode(false);
+$("btn-start").onclick = startCamera;
+$("btn-stop").onclick = stopCamera;
+
+loadModel();
+</script>
+</body>
+</html>
